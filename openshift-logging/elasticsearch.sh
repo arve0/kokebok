@@ -16,36 +16,45 @@ function es {
 }
 
 function es-search {
-  payload='{
-    "query": {
-      "match": {
-        "message": {
-          "query": "'"$1"'",
-          "operator": "and"
+  if [[ $container != "" ]]; then
+    echo "Searching for $1 in $container" >&2
+    payload='{
+      "from": 0,
+      "size": 1000,
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "term": {
+                "kubernetes.container_name": "'"$container"'"
+              }
+            },
+            {
+              "match": {
+                "message": {
+                  "query": "'"$1"'",
+                  "operator": "and"
+                }
+              }
+            }
+          ]
         }
       }
-    }
-  }'
-#   payload='{
-#   "query": {
-#     "bool": {
-#       "must": [
-#         {
-#           "match": {
-#             "kubernetes.pod_name": "'"$1"'"
-#           }
-#         },
-#         {
-#           "match": {
-#             "message": "'"$2"'"
-#           }
-#         }
-#       ]
-#     }
-#   }
-# }'
-#   shift
-#   shift
+    }'
+  else
+    echo "Searching for $1" >&2
+    payload='{
+      "query": {
+        "match": {
+          "message": {
+            "query": "'"$1"'",
+            "operator": "and"
+          }
+        }
+      }
+    }'
+  fi
+  shift
 
-  es "/app-*/_search" -X POST -H 'Content-Type: application/json' -d "$payload"
+  es "/app-*/_search" -X POST -H 'Content-Type: application/json' -d "$payload" "$@"
 }
